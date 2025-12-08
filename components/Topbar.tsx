@@ -1,7 +1,8 @@
 'use client';
 
-import { Search, Bell, User, Menu, X } from 'lucide-react';
+import { Search, User, Menu, X } from 'lucide-react';
 import { useLanguage } from '../context/useLanguage';
+import NotificationsDropdown from './NotificationsDropdown';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -22,7 +23,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
           <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-            Dashboard
+            {language === 'en' ? 'Dashboard' : 'لوحة التحكم'}
           </h2>
         </div>
 
@@ -33,7 +34,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
             onClick={toggleLanguage}
             className="px-3 py-1.5 bg-blue-100 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-200"
           >
-            {language === 'en' ? 'عربي' : 'English'}
+            {language === 'en' ? 'عربي' : 'EN'}
           </button>
 
           {/* Search - Hidden on mobile */}
@@ -41,23 +42,22 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
             <Search className="w-4 h-4 text-gray-500" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={language === 'en' ? 'Search...' : 'بحث...'}
               className="bg-transparent border-none focus:outline-none ml-2 text-sm w-40"
             />
           </div>
 
           {/* Notifications */}
-          <button className="relative p-2 hover:bg-gray-100 rounded-full">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <NotificationsDropdown />
 
           {/* User */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-blue-600" />
             </div>
-            <span className="text-sm font-medium hidden md:inline">Admin</span>
+            <span className="text-sm font-medium hidden md:inline">
+              {language === 'en' ? 'Admin' : 'مدير'}
+            </span>
           </div>
         </div>
       </div>
