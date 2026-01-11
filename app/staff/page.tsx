@@ -4,9 +4,11 @@ import { User, Lock, Calendar, Clock, Smartphone } from 'lucide-react';
 import { useLanguage } from '../../context/useLanguage';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTerminology } from '../../context/useIndustry';
 
 export default function StaffLoginPage() {
   const { language } = useLanguage();
+  const terminology = useTerminology();
   const router = useRouter();
   const [credentials, setCredentials] = useState({
     username: '',
@@ -15,189 +17,196 @@ export default function StaffLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Mock staff credentials
-  const staffCredentials = [
-    { username: 'ali', password: 'ali123', name: 'Ali', id: 1 },
-    { username: 'sarah', password: 'sarah123', name: 'Sarah', id: 2 },
-    { username: 'maria', password: 'maria123', name: 'Maria', id: 3 },
-    { username: 'fatima', password: 'fatima123', name: 'Fatima', id: 4 },
-  ];
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const staff = staffCredentials.find(
-        s => s.username === credentials.username && s.password === credentials.password
-      );
+    try {
+      // TODO: Replace with real API authentication
+      // const response = await fetch('/api/auth/staff/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(credentials)
+      // });
+      // 
+      // if (response.ok) {
+      //   const data = await response.json();
+      //   // Token/User data would be handled by auth context
+      //   router.push('/staff/dashboard');
+      // } else {
+      //   setError(language === 'en'
+      //     ? 'Invalid username or password'
+      //     : 'اسم المستخدم أو كلمة المرور غير صحيحة');
+      // }
 
-      if (staff) {
-        // Save staff info to session storage
-        sessionStorage.setItem('staffUser', JSON.stringify({
-          id: staff.id,
-          name: staff.name,
-          loggedIn: true,
-        }));
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For demo, allow any non-empty credentials
+      if (credentials.username && credentials.password) {
         router.push('/staff/dashboard');
       } else {
-        setError(language === 'en' 
-          ? 'Invalid username or password' 
-          : 'اسم المستخدم أو كلمة المرور غير صحيحة');
+        setError(language === 'en'
+          ? 'Please enter username and password'
+          : 'يرجى إدخال اسم المستخدم وكلمة المرور');
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(language === 'en'
+        ? 'Network error. Please try again.'
+        : 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({
+      ...credentials,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8 text-blue-600" />
+        {/* Login Card */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-white text-center">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-10 h-10" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">
+              {language === 'en' ? `${terminology.staff} Portal` : `بوابة ${terminology.staff}`}
+            </h1>
+            <p className="opacity-90">
+              {language === 'en'
+                ? `Access your ${terminology.staff.toLowerCase()} dashboard and schedule`
+                : `الوصول إلى لوحة تحكم ${terminology.staff} وجدولك`}
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            {language === 'en' ? 'Staff Portal' : 'بوابة الموظفين'}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            {language === 'en' 
-              ? 'Sign in to access your schedule' 
-              : 'سجل الدخول للوصول إلى جدولك'}
-          </p>
-        </div>
 
-        {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <form onSubmit={handleLogin}>
-            {/* Username */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {language === 'en' ? 'Username' : 'اسم المستخدم'}
-                </div>
-              </label>
-              <input
-                type="text"
-                value={credentials.username}
-                onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder={language === 'en' ? 'Enter your username' : 'أدخل اسم المستخدم'}
-                required
-              />
-            </div>
-
-            {/* Password */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  {language === 'en' ? 'Password' : 'كلمة المرور'}
-                </div>
-              </label>
-              <input
-                type="password"
-                value={credentials.password}
-                onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            {/* Error Message */}
+          {/* Login Form */}
+          <div className="p-8">
             {error && (
-              <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
               </div>
             )}
 
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {language === 'en' ? 'Signing in...' : 'جارٍ تسجيل الدخول...'}
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'en' ? 'Username' : 'اسم المستخدم'}
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    name="username"
+                    value={credentials.username}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={language === 'en' ? 'Enter username' : 'أدخل اسم المستخدم'}
+                    required
+                  />
                 </div>
-              ) : (
-                language === 'en' ? 'Sign In' : 'تسجيل الدخول'
-              )}
-            </button>
-          </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-8 pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              {language === 'en' ? 'Demo Credentials' : 'بيانات تجريبية'}
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <User className="w-3 h-3" />
-                <span>Username: <code className="bg-gray-100 px-2 py-1 rounded">ali</code></span>
               </div>
-              <div className="flex items-center gap-2">
-                <Lock className="w-3 h-3" />
-                <span>Password: <code className="bg-gray-100 px-2 py-1 rounded">ali123</code></span>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'en' ? 'Password' : 'كلمة المرور'}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={credentials.password}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={language === 'en' ? 'Enter password' : 'أدخل كلمة المرور'}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {language === 'en' ? 'Signing in...' : 'جاري تسجيل الدخول...'}
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    {language === 'en' ? 'Sign In' : 'تسجيل الدخول'}
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Help Text */}
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  {language === 'en'
+                    ? 'Need help signing in? Contact your manager.'
+                    : 'تحتاج مساعدة في تسجيل الدخول؟ اتصل بمديرك.'}
+                </p>
+                <a
+                  href="/"
+                  className="inline-block mt-4 text-blue-600 hover:text-blue-700 text-sm"
+                >
+                  &larr; {language === 'en' ? 'Back to main dashboard' : 'العودة إلى اللوحة الرئيسية'}
+                </a>
               </div>
             </div>
           </div>
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="text-center p-4 bg-white rounded-xl border">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
               <Calendar className="w-5 h-5 text-blue-600" />
             </div>
-            <h4 className="font-medium text-sm mb-1">{language === 'en' ? 'View Schedule' : 'عرض الجدول'}</h4>
-            <p className="text-xs text-gray-500">
-              {language === 'en' 
-                ? 'See your daily appointments' 
-                : 'شاهد مواعيدك اليومية'}
-            </p>
+            <div className="text-sm font-medium">
+              {language === 'en' ? 'Schedule Access' : 'الوصول إلى الجدول'}
+            </div>
           </div>
-          
-          <div className="text-center p-4 bg-white rounded-xl border">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
               <Clock className="w-5 h-5 text-green-600" />
             </div>
-            <h4 className="font-medium text-sm mb-1">{language === 'en' ? 'Track Time' : 'تتبع الوقت'}</h4>
-            <p className="text-xs text-gray-500">
-              {language === 'en' 
-                ? 'Monitor appointment durations' 
-                : 'مراقبة مدة المواعيد'}
-            </p>
+            <div className="text-sm font-medium">
+              {language === 'en' ? 'Time Tracking' : 'تتبع الوقت'}
+            </div>
           </div>
-          
-          <div className="text-center p-4 bg-white rounded-xl border">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
               <Smartphone className="w-5 h-5 text-purple-600" />
             </div>
-            <h4 className="font-medium text-sm mb-1">{language === 'en' ? 'Mobile Ready' : 'جاهز للجوال'}</h4>
-            <p className="text-xs text-gray-500">
-              {language === 'en' 
-                ? 'Access on any device' 
-                : 'الوصول من أي جهاز'}
-            </p>
+            <div className="text-sm font-medium">
+              {language === 'en' ? 'Mobile Friendly' : 'متوافق مع الجوال'}
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
-            {language === 'en' 
-              ? 'Having trouble signing in?' 
-              : 'تواجه مشكلة في تسجيل الدخول؟'}{' '}
-            <a href="tel:+966112345678" className="text-blue-600 hover:underline">
-              {language === 'en' ? 'Contact Support' : 'اتصل بالدعم'}
-            </a>
+        {/* Footer Note */}
+        <div className="mt-8 text-center text-sm text-gray-600">
+          <p>
+            {language === 'en'
+              ? `Secure ${terminology.staff.toLowerCase()} portal powered by SmartOps Gulf Dashboard`
+              : `بوابة ${terminology.staff} آمنة مدعومة بـ SmartOps لوحة تحكم الخليج`}
           </p>
         </div>
       </div>

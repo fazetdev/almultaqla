@@ -13,39 +13,41 @@ import {
   Briefcase
 } from 'lucide-react';
 import { useLanguage } from '../context/useLanguage';
+import { useTerminology } from '../context/useIndustry';
 
 interface SidebarProps {
   onClose?: () => void;
 }
 
-const adminMenuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-  { icon: Calendar, label: 'Schedule', href: '/schedule' },
-  { icon: Users, label: 'Customers', href: '/customers' },
-  { icon: CreditCard, label: 'Payments', href: '/payments' },
-  { icon: BarChart3, label: 'Analytics', href: '/analytics' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
-];
-
-const customerMenuItems = [
-  { icon: CalendarDays, label: 'Book Appointment', href: '/book' },
-  { icon: User, label: 'My Bookings', href: '/my-bookings' },
-];
-
-const staffMenuItems = [
-  { icon: Briefcase, label: 'Staff Portal', href: '/staff' },
-];
-
 export default function Sidebar({ onClose }: SidebarProps) {
   const { language } = useLanguage();
+  const terminology = useTerminology();
+
+  const adminMenuItems = [
+    { icon: LayoutDashboard, label: terminology.dashboardTitle, href: '/' },
+    { icon: Calendar, label: terminology.scheduleTitle, href: '/schedule' },
+    { icon: Users, label: terminology.customer + 's', href: '/customers' },
+    { icon: CreditCard, label: terminology.payment + 's', href: '/payments' },
+    { icon: BarChart3, label: terminology.analyticsTitle, href: '/analytics' },
+    { icon: Settings, label: 'Settings', href: '/settings' },
+  ];
+
+  const customerMenuItems = [
+    { icon: CalendarDays, label: terminology.bookButton, href: terminology.bookingsPath },
+    { icon: User, label: 'My ' + terminology.appointment + 's', href: '/my-bookings' },
+  ];
+
+  const staffMenuItems = [
+    { icon: Briefcase, label: terminology.staff + ' Portal', href: terminology.staffPath },
+  ];
 
   return (
     <aside className="h-full flex flex-col">
       {/* Logo & Close Button */}
       <div className="p-4 md:p-6 border-b flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-blue-600">ALMULTAQLA</h1>
-          <p className="text-sm text-gray-500 mt-1">Salon Dashboard</p>
+          <h1 className="text-xl font-bold text-blue-600">SmartOps Gulf</h1>
+          <p className="text-sm text-gray-500 mt-1">{terminology.business} Dashboard</p>
         </div>
         <button 
           onClick={onClose}
@@ -54,7 +56,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <X className="w-5 h-5" />
         </button>
       </div>
-      
+
       {/* Admin Navigation */}
       <div className="p-2 md:p-4">
         <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
@@ -76,7 +78,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             ))}
           </ul>
         </nav>
-        
+
         {/* Customer Portal Section */}
         <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
           {language === 'en' ? 'Customer Portal' : 'بوابة العميل'}
@@ -97,7 +99,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             ))}
           </ul>
         </nav>
-        
+
         {/* Staff Portal Section */}
         <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
           {language === 'en' ? 'Staff Portal' : 'بوابة الموظفين'}
@@ -119,7 +121,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </ul>
         </nav>
       </div>
-      
+
       {/* Current Language */}
       <div className="p-4 border-t mt-auto">
         <p className="text-sm text-gray-500">

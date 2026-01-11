@@ -2,13 +2,36 @@
 
 import { DollarSign, Filter, Download, CreditCard, Wallet, AlertCircle, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../../context/useLanguage';
-import { payments } from '../../lib/mockData';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTerminology } from '../../context/useIndustry';
 
 export default function PaymentsPage() {
   const { language } = useLanguage();
+  const terminology = useTerminology();
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState('all');
+  const [payments, setPayments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPayments = async () => {
+      setIsLoading(true);
+      try {
+        // TODO: Replace with real API call
+        // const data = await dataService.getPayments();
+        // setPayments(data);
+        
+        // For now, empty state
+        setPayments([]);
+      } catch (error) {
+        console.error('Failed to load payments:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPayments();
+  }, []);
 
   // Filter payments
   const filteredPayments = payments.filter(payment => {
@@ -19,15 +42,15 @@ export default function PaymentsPage() {
   // Calculate totals
   const totalPaid = payments
     .filter(p => p.status === 'paid')
-    .reduce((sum, p) => sum + p.amount, 0);
-    
+    .reduce((sum: number, p: any) => sum + p.amount, 0);
+
   const totalPending = payments
     .filter(p => p.status === 'pending')
-    .reduce((sum, p) => sum + p.amount, 0);
-    
+    .reduce((sum: number, p: any) => sum + p.amount, 0);
+
   const totalOverdue = payments
     .filter(p => p.status === 'overdue')
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum: number, p: any) => sum + p.amount, 0);
 
   const getStatusIcon = (status: string) => {
     switch(status) {
@@ -56,13 +79,26 @@ export default function PaymentsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(language === 'en' ? 'en-US' : 'ar-SA', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString() + ' AED';
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString(language === 'en' ? 'en-US' : 'ar-SA');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {language === 'en' ? 'Loading payments...' : 'جاري تحميل المدفوعات...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -70,282 +106,200 @@ export default function PaymentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {language === 'en' ? 'Payment Management' : 'إدارة المدفوعات'}
+            {language === 'en' ? terminology.payment + 's' : terminology.payment + 'ات'}
           </h1>
           <p className="text-gray-600 mt-1">
-            {language === 'en' 
-              ? `Track ${payments.length} payments` 
-              : `تتبع ${payments.length} مدفوعات`}
+            {language === 'en'
+              ? `Manage ${terminology.payment.toLowerCase()}s and track revenue`
+              : `إدارة ${terminology.payment}ات وتتبع الإيرادات`}
           </p>
         </div>
+        
         <div className="flex items-center gap-3">
           {/* Export Button */}
           <button className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2">
             <Download className="w-4 h-4" />
-            <span>{language === 'en' ? 'Export' : 'تصدير'}</span>
+            {language === 'en' ? 'Export' : 'تصدير'}
           </button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-gray-500">{language === 'en' ? 'Total Paid' : 'إجمالي المدفوع'}</div>
-              <div className="text-2xl font-bold mt-1 text-green-600">
-                {totalPaid.toLocaleString()} AED
-              </div>
-              <div className="text-sm text-gray-500 mt-2">
-                {payments.filter(p => p.status === 'paid').length} {language === 'en' ? 'transactions' : 'معاملة'}
-              </div>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white border rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-gray-500">{language === 'en' ? 'Pending Payments' : 'مدفوعات قيد الانتظار'}</div>
-              <div className="text-2xl font-bold mt-1 text-yellow-600">
-                {totalPending.toLocaleString()} AED
-              </div>
-              <div className="text-sm text-gray-500 mt-2">
-                {payments.filter(p => p.status === 'pending').length} {language === 'en' ? 'pending' : 'قيد الانتظار'}
-              </div>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white border rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-gray-500">{language === 'en' ? 'Overdue Payments' : 'مدفوعات متأخرة'}</div>
-              <div className="text-2xl font-bold mt-1 text-red-600">
-                {totalOverdue.toLocaleString()} AED
-              </div>
-              <div className="text-sm text-gray-500 mt-2">
-                {payments.filter(p => p.status === 'overdue').length} {language === 'en' ? 'overdue' : 'متأخرة'}
-              </div>
-            </div>
-            <div className="p-3 bg-red-100 rounded-lg">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white border rounded-xl p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{language === 'en' ? 'Status:' : 'الحالة:'}</span>
-            <select 
+          
+          {/* Filter Dropdown */}
+          <div className="relative">
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">{language === 'en' ? 'All Status' : 'كل الحالات'}</option>
               <option value="paid">{language === 'en' ? 'Paid' : 'مدفوع'}</option>
               <option value="pending">{language === 'en' ? 'Pending' : 'قيد الانتظار'}</option>
               <option value="overdue">{language === 'en' ? 'Overdue' : 'متأخر'}</option>
             </select>
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{language === 'en' ? 'Date Range:' : 'النطاق الزمني:'}</span>
-            <select 
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">{language === 'en' ? 'All Time' : 'كل الوقت'}</option>
-              <option value="week">{language === 'en' ? 'This Week' : 'هذا الأسبوع'}</option>
-              <option value="month">{language === 'en' ? 'This Month' : 'هذا الشهر'}</option>
-            </select>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white border rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</div>
+              <div className="text-sm text-gray-600">{language === 'en' ? 'Total Paid' : 'إجمالي المدفوع'}</div>
+            </div>
           </div>
-          
-          <div className="md:ml-auto text-sm text-gray-600">
-            {language === 'en' ? 'Total:' : 'الإجمالي:'} 
-            <span className="font-medium ml-2">
-              {filteredPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()} AED
-            </span>
+          <div className="text-sm text-gray-500">
+            {payments.filter(p => p.status === 'paid').length} {language === 'en' ? 'transactions' : 'معاملة'}
+          </div>
+        </div>
+
+        <div className="bg-white border rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending)}</div>
+              <div className="text-sm text-gray-600">{language === 'en' ? 'Pending' : 'قيد الانتظار'}</div>
+            </div>
+          </div>
+          <div className="text-sm text-gray-500">
+            {payments.filter(p => p.status === 'pending').length} {language === 'en' ? 'awaiting payment' : 'في انتظار الدفع'}
+          </div>
+        </div>
+
+        <div className="bg-white border rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalOverdue)}</div>
+              <div className="text-sm text-gray-600">{language === 'en' ? 'Overdue' : 'متأخر'}</div>
+            </div>
+          </div>
+          <div className="text-sm text-gray-500">
+            {payments.filter(p => p.status === 'overdue').length} {language === 'en' ? 'overdue payments' : 'دفعات متأخرة'}
           </div>
         </div>
       </div>
 
       {/* Payments Table */}
       <div className="bg-white border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Customer' : 'العميل'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Date' : 'التاريخ'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Service' : 'الخدمة'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Amount' : 'المبلغ'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Payment Method' : 'طريقة الدفع'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Status' : 'الحالة'}
-                </th>
-                <th className="text-left p-4 font-medium text-gray-700">
-                  {language === 'en' ? 'Actions' : 'الإجراءات'}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPayments.map((payment) => (
-                <tr key={payment.id} className="border-b hover:bg-gray-50">
-                  <td className="p-4">
-                    <div className="font-medium">{payment.customerName}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">{formatDate(payment.date)}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">{payment.service}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="font-medium">{payment.amount.toLocaleString()} AED</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      {payment.method === 'Card' ? (
-                        <CreditCard className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <Wallet className="w-4 h-4 text-gray-500" />
-                      )}
-                      <span className="text-sm">{payment.method}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(payment.status)}
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(payment.status)}`}>
-                        {getStatusText(payment.status)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 text-sm">
-                        {language === 'en' ? 'View' : 'عرض'}
-                      </button>
-                      {payment.status !== 'paid' && (
-                        <button className="text-green-600 hover:text-green-800 text-sm">
-                          {language === 'en' ? 'Mark Paid' : 'تحديد كمدفوع'}
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Summary Footer */}
-        <div className="p-4 border-t bg-gray-50">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="text-sm text-gray-600">
-              {language === 'en' 
-                ? `Showing ${filteredPayments.length} of ${payments.length} payments`
-                : `عرض ${filteredPayments.length} من ${payments.length} مدفوعات`}
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-sm">
-                <span className="text-gray-600">{language === 'en' ? 'Collected:' : 'المحصل:'}</span>
-                <span className="font-medium ml-2 text-green-600">
-                  {totalPaid.toLocaleString()} AED
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-600">{language === 'en' ? 'Due:' : 'المستحق:'}</span>
-                <span className="font-medium ml-2 text-red-600">
-                  {(totalPending + totalOverdue).toLocaleString()} AED
-                </span>
-              </div>
-            </div>
+        <div className="p-4 border-b flex items-center justify-between">
+          <h3 className="font-medium">
+            {language === 'en' ? `All ${terminology.payment}s` : `جميع ${terminology.payment}ات`}
+          </h3>
+          <div className="text-sm text-gray-600">
+            {filteredPayments.length} {language === 'en' ? 'payments' : 'دفعة'}
           </div>
         </div>
+
+        {filteredPayments.length > 0 ? (
+          <div className="divide-y">
+            {filteredPayments.map((payment) => (
+              <div key={payment.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">
+                        {language === 'en' ? `${terminology.payment} #${payment.id}` : `${terminology.payment} رقم ${payment.id}`}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {payment.customerName || 'Customer'} • {formatDate(payment.date)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <div className="font-bold text-blue-600">
+                        {formatCurrency(payment.amount)}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {payment.method || 'Payment method'}
+                      </div>
+                    </div>
+                    
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payment.status)} flex items-center gap-2`}>
+                      {getStatusIcon(payment.status)}
+                      {getStatusText(payment.status)}
+                    </div>
+                    
+                    <button className="px-3 py-1 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm">
+                      {language === 'en' ? 'View Details' : 'عرض التفاصيل'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <DollarSign className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">
+              {language === 'en' ? `No ${terminology.payment}s Found` : `لم يتم العثور على ${terminology.payment}ات`}
+            </h3>
+            <p className="text-gray-600">
+              {language === 'en'
+                ? statusFilter !== 'all'
+                  ? `No ${terminology.payment.toLowerCase()}s with status "${statusFilter}"`
+                  : `No ${terminology.payment.toLowerCase()}s recorded yet`
+                : statusFilter !== 'all'
+                  ? `لا توجد ${terminology.payment}ات بحالة "${getStatusText(statusFilter)}"`
+                  : `لم يتم تسجيل أي ${terminology.payment}ات بعد`}
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Payment Methods Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      {/* Summary */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold text-lg mb-4">
-            {language === 'en' ? 'Payment Methods' : 'طرق الدفع'}
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">Cash</span>
+          <h4 className="font-medium mb-4">{language === 'en' ? 'Payment Methods' : 'طرق الدفع'}</h4>
+          <div className="space-y-3">
+            {['Credit Card', 'Cash', 'Bank Transfer'].map((method) => (
+              <div key={method} className="flex items-center justify-between">
+                <span className="text-gray-700">{method}</span>
                 <span className="font-medium">
-                  {payments.filter(p => p.method === 'Cash').length} {language === 'en' ? 'payments' : 'دفعة'}
+                  {formatCurrency(
+                    payments
+                      .filter(p => p.method === method.toLowerCase())
+                      .reduce((sum: number, p: any) => sum + p.amount, 0)
+                  )}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
-                  style={{ width: `${(payments.filter(p => p.method === 'Cash').length / payments.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">Card</span>
-                <span className="font-medium">
-                  {payments.filter(p => p.method === 'Card').length} {language === 'en' ? 'payments' : 'دفعة'}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${(payments.filter(p => p.method === 'Card').length / payments.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
         <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold text-lg mb-4">
-            {language === 'en' ? 'Quick Actions' : 'إجراءات سريعة'}
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <button className="p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 flex flex-col items-center justify-center">
-              <CreditCard className="w-5 h-5 mb-1" />
-              <span className="text-sm">{language === 'en' ? 'Add Payment' : 'إضافة دفعة'}</span>
-            </button>
-            <button className="p-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 flex flex-col items-center justify-center">
-              <Download className="w-5 h-5 mb-1" />
-              <span className="text-sm">{language === 'en' ? 'Export Report' : 'تصدير تقرير'}</span>
-            </button>
-            <button className="p-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 flex flex-col items-center justify-center">
-              <AlertCircle className="w-5 h-5 mb-1" />
-              <span className="text-sm">{language === 'en' ? 'Send Reminders' : 'إرسال تذكيرات'}</span>
-            </button>
-            <button className="p-3 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 flex flex-col items-center justify-center">
-              <DollarSign className="w-5 h-5 mb-1" />
-              <span className="text-sm">{language === 'en' ? 'View Invoices' : 'عرض الفواتير'}</span>
-            </button>
+          <h4 className="font-medium mb-4">{language === 'en' ? 'Revenue Summary' : 'ملخص الإيرادات'}</h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">{language === 'en' ? 'Total Revenue' : 'إجمالي الإيرادات'}</span>
+              <span className="font-bold text-blue-600">
+                {formatCurrency(totalPaid + totalPending + totalOverdue)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">{language === 'en' ? 'Collected' : 'المتحصل'}</span>
+              <span className="font-medium text-green-600">{formatCurrency(totalPaid)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">{language === 'en' ? 'Outstanding' : 'المستحق'}</span>
+              <span className="font-medium text-orange-600">
+                {formatCurrency(totalPending + totalOverdue)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
