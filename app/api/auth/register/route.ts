@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic'; // Ensures this route is only run at request time
 // POST /api/auth/register - Register new user
 export async function POST(request: NextRequest) {
   try {

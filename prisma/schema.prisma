@@ -2,30 +2,31 @@
 // Multi-industry, Arabic/English, Gulf-region focused
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"  // New requirement for Prisma 7
   previewFeatures = ["fullTextSearchPostgres", "views"]
 }
 
 datasource db {
-  provider     = "postgresql"
-  relationMode = "prisma"
+  provider = "postgresql"
+  // Note: url and relationMode moved to prisma.config.ts for Prisma 7
 }
 
 // ============== CORE ORGANIZATION STRUCTURE ==============
 model Organization {
-  id                String          @id @default(cuid())
+  id                String            @id @default(cuid())
   name              String
-  nameAr            String?         // Arabic name
+  nameAr            String?           // Arabic name
   industry          IndustryType
-  subdomain         String?         @unique
-  timezone          String          @default("Asia/Riyadh")
-  language          String          @default("ar")
+  subdomain         String?           @unique
+  timezone          String            @default("Asia/Riyadh")
+  language          String            @default("ar")
   logoUrl           String?
-  theme             Json?           // Custom theme colors
-  settings          Json?           // Organization-specific settings
-  isActive          Boolean         @default(true)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  theme             Json?             // Custom theme colors
+  settings          Json?             // Organization-specific settings
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   
   // Relations
   users             User[]
@@ -104,7 +105,7 @@ model Session {
   @@index([expiresAt])
 }
 
-// ============== CUSTOMERS (Matches your Customer interface) ==============
+// ============== CUSTOMERS ==============
 model Customer {
   id             String        @id @default(cuid())
   organizationId String
@@ -112,7 +113,6 @@ model Customer {
   userId         String?       @unique
   user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  // Core fields from your interface
   name           String
   email          String?       @unique
   phone          String?       @unique
@@ -120,16 +120,13 @@ model Customer {
   totalSpent     Float         @default(0)
   notes          String?
   
-  // Arabic support and extended fields
   nameAr         String?
   gender         GenderType?
   dateOfBirth    DateTime?
   nationality    String?
   
-  // Industry-specific flexible fields
   customFields   Json?
   
-  // Address
   addressLine1   String?
   addressLine2   String?
   city           String?
@@ -137,14 +134,12 @@ model Customer {
   country        String?       @default("SA")
   postalCode     String?
   
-  // Metadata
-  tags           String[]      // For categorization (VIP, New, etc.)
+  tags           String[]      
   totalBookings  Int           @default(0)
   
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   
-  // Relations
   bookings       Booking[]
   payments       Payment[]
   
@@ -161,92 +156,78 @@ enum GenderType {
   OTHER
 }
 
-// ============== STAFF (Matches your Staff interface) ==============
+// ============== STAFF ==============
 model Staff {
-  id               String        @id @default(cuid())
-  organizationId   String
-  organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId           String?       @unique
-  user             User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                String        @id @default(cuid())
+  organizationId    String
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId            String?       @unique
+  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  // Core fields from your interface
-  name             String
-  role             String        // e.g., "Stylist", "Doctor", "Sales Agent", "Driver", "Teacher"
-  email            String?       @unique
-  phone            String?
-  performanceScore Float         @default(0)
+  name              String
+  role              String        
+  email             String?       @unique
+  phone             String?
+  performanceScore  Float         @default(0)
   
-  // Arabic support and extended fields
-  nameAr           String?
-  title            String?       // Professional title
-  bio              String?
-  bioAr            String?
+  nameAr            String?
+  title             String?       
+  bio               String?
+  bioAr             String?
   
-  // Scheduling and availability
-  schedule         Json?         // Weekly availability
-  workingHours     Json?         // Custom working hours
-  isActive         Boolean       @default(true)
+  schedule          Json?         
+  workingHours      Json?         
+  isActive          Boolean       @default(true)
   
-  // Industry-specific fields
-  customFields     Json?
+  customFields      Json?
   
-  // Media
-  avatarUrl        String?
-  documents        Json?         // Certificates, licenses
+  avatarUrl         String?
+  documents         Json?         
   
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   
-  // Relations
-  services         Service[]     @relation("ServiceStaff")
-  bookings         Booking[]
-  performances     StaffPerformance[]
+  services          Service[]     @relation("ServiceStaff")
+  bookings          Booking[]
+  performances      StaffPerformance[]
   
   @@index([organizationId, role])
   @@index([organizationId, isActive])
 }
 
-// ============== SERVICES (Matches your Service interface) ==============
+// ============== SERVICES ==============
 model Service {
   id             String        @id @default(cuid())
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Core fields from your interface
   name           String
   category       String
-  duration       Int           // in minutes
+  duration       Int           
   price          Float
   description    String?
   
-  // Arabic support
   nameAr         String?
   descriptionAr  String?
   categoryAr     String?
   
-  // Business logic
   isActive       Boolean       @default(true)
   requiresStaff  Boolean       @default(true)
   currency       String        @default("SAR")
   
-  // Industry-specific categorization
   subcategory    String?
-  type           String?       // Industry-specific type
+  type           String?       
   
-  // Staff assignment
   staff          Staff[]       @relation("ServiceStaff")
-  bookingSlots   Json?         // Available slots configuration
+  bookingSlots   Json?         
   
-  // Custom fields for industry specifics
   customFields   Json?
   
-  // Media
   imageUrl       String?
   
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   
-  // Relations
   bookings       Booking[]
   
   @@index([organizationId, category])
@@ -254,40 +235,35 @@ model Service {
   @@index([organizationId, isActive])
 }
 
-// ============== BOOKINGS (Matches your Booking interface) ==============
+// ============== BOOKINGS ==============
 model Booking {
   id             String        @id @default(cuid())
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Core fields from your interface
   customerId     String
   customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  date          DateTime
-  type          String
-  status        BookingStatus @default(PENDING)
-  amount        Float
-  notes         String?
+  date           DateTime
+  type           String
+  status         BookingStatus @default(PENDING)
+  amount         Float
+  notes          String?
   
-  // Extended fields
-  endDate        DateTime?     // Calculated from service duration
+  endDate        DateTime?     
   staffId        String?
   staff          Staff?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
   serviceId      String?
   service        Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   
-  // Industry-specific details
   industryType   IndustryType
   customFields   Json?
   
-  // Timestamps
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   cancelledAt    DateTime?
   confirmedAt    DateTime?
   completedAt    DateTime?
   
-  // Relations
   payment        Payment?
   
   @@index([organizationId, date])
@@ -307,13 +283,12 @@ enum BookingStatus {
   NO_SHOW
 }
 
-// ============== PAYMENTS (Matches your Payment interface) ==============
+// ============== PAYMENTS ==============
 model Payment {
   id             String        @id @default(cuid())
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Core fields from your interface
   bookingId      String?       @unique
   booking        Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   customerId     String
@@ -323,19 +298,15 @@ model Payment {
   status         PaymentStatus @default(PENDING)
   date           DateTime
   
-  // Extended fields
   receiptNumber  String        @unique
   currency       String        @default("SAR")
   
-  // Arabic support
   methodAr       String?
   
-  // Transaction details
   transactionId  String?       @unique
-  gateway        String?       // "stripe", "moyasar", "cash", "card"
-  gatewayData    Json?         // Raw gateway response
+  gateway        String?       
+  gatewayData    Json?         
   
-  // Timestamps
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   paidAt         DateTime?
@@ -367,24 +338,21 @@ enum PaymentStatus {
 
 // ============== ANALYTICS & PERFORMANCE ==============
 model AnalyticsEvent {
-  id             String        @id @default(cuid())
+  id             String             @id @default(cuid())
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Event data
   eventType      AnalyticsEventType
-  entityType     String        // "booking", "payment", "customer", etc.
+  entityType     String             
   entityId       String?
-  data           Json          // Detailed event data
+  data           Json               
   
-  // Metrics (for fast aggregation)
-  revenue        Float?        @default(0)
-  duration       Int?          // in minutes
-  count          Int           @default(1)
+  revenue        Float?             @default(0)
+  duration       Int?               
+  count          Int                @default(1)
   
-  // Timestamps
-  eventDate      DateTime      // Date of the event (not creation)
-  createdAt      DateTime      @default(now())
+  eventDate      DateTime           
+  createdAt      DateTime           @default(now())
   
   @@index([organizationId, eventType, eventDate])
   @@index([organizationId, eventDate])
@@ -409,15 +377,13 @@ model StaffPerformance {
   staffId        String
   staff          Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade)
   
-  // Performance metrics
-  period         DateTime      // Start of period (week, month)
-  periodType     PeriodType    // "DAILY", "WEEKLY", "MONTHLY"
+  period         DateTime      
+  periodType     PeriodType    
   bookingsCount  Int           @default(0)
   revenue        Float         @default(0)
-  rating         Float?        // Average rating
+  rating         Float?        
   hoursWorked    Float?        @default(0)
   
-  // Calculated scores
   efficiencyScore Float?       @default(0)
   qualityScore    Float?       @default(0)
   
@@ -452,7 +418,7 @@ view StaffPerformanceView {
   staffNameAr      String? @map("staff_name_ar")
   periodStart      DateTime @map("period_start")
   revenue          Float
-  bookings         Int
+  bookings          Int
   
   @@map("staff_performance_view")
   @@ignore
@@ -472,8 +438,8 @@ view PopularServicesView {
 
 view PeakHoursView {
   organizationId   String  @map("organization_id")
-  hour             Int
-  bookings         Int
+  hour               Int
+  bookings           Int
   
   @@map("peak_hours_view")
   @@ignore
@@ -485,16 +451,9 @@ model IndustryConfig {
   organizationId String        @unique
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Industry-specific terminology
-  terminology    Json          // Arabic/English term mappings
-  
-  // Business hours (JSON array)
+  terminology    Json          
   businessHours  Json
-  
-  // Booking rules
   bookingRules   Json?
-  
-  // Industry-specific settings
   settings       Json?
   
   updatedAt      DateTime      @updatedAt
@@ -509,17 +468,15 @@ model Notification {
   userId         String
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Notification content
   title          String
   titleAr        String?
   message        String
   messageAr      String?
   type           NotificationType
   
-  // Metadata
   isRead         Boolean       @default(false)
   priority       PriorityLevel @default(MEDIUM)
-  actionUrl      String?       // URL to navigate to
+  actionUrl      String?       
   
   createdAt      DateTime      @default(now())
   readAt         DateTime?

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/prisma';
 import { getToken } from 'next-auth/jwt';
-
-const prisma = new PrismaClient();
 
 // GET /api/analytics - Get analytics data
 export async function GET(request: NextRequest) {
@@ -235,7 +233,5 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch analytics data' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
