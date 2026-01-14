@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+// ... rest of your imports (prisma, NextResponse, etc)
 // GET /api/bookings/[id] - Get single booking
 export async function GET(
   request: NextRequest,

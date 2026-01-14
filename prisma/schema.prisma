@@ -2,31 +2,31 @@
 // Multi-industry, Arabic/English, Gulf-region focused
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"  // New requirement for Prisma 7
-  previewFeatures = ["fullTextSearchPostgres", "views"]
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["fullTextSearchPostgres", "views", "driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
-  // Note: url and relationMode moved to prisma.config.ts for Prisma 7
+  // Connection details are handled in prisma.config.ts for Prisma 7 compliance
 }
 
 // ============== CORE ORGANIZATION STRUCTURE ==============
 model Organization {
-  id                String            @id @default(cuid())
+  id                String             @id @default(cuid())
   name              String
-  nameAr            String?           // Arabic name
+  nameAr            String?            // Arabic name
   industry          IndustryType
-  subdomain         String?           @unique
-  timezone          String            @default("Asia/Riyadh")
-  language          String            @default("ar")
+  subdomain         String?            @unique
+  timezone          String             @default("Asia/Riyadh")
+  language          String             @default("ar")
   logoUrl           String?
-  theme             Json?             // Custom theme colors
-  settings          Json?             // Organization-specific settings
-  isActive          Boolean           @default(true)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  theme             Json?              // Custom theme colors
+  settings          Json?              // Organization-specific settings
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   
   // Relations
   users             User[]
@@ -40,9 +40,9 @@ model Organization {
   staffPerformances StaffPerformance[]
   notifications     Notification[]
 
+  @@unique([name, industry])
   @@index([industry])
   @@index([subdomain])
-  @@unique([name, industry])
 }
 
 enum IndustryType {
@@ -55,22 +55,22 @@ enum IndustryType {
 
 // ============== AUTHENTICATION & USERS ==============
 model User {
-  id              String        @id @default(cuid())
-  email           String        @unique
+  id              String         @id @default(cuid())
+  email           String         @unique
   phone           String?
   passwordHash    String
   name            String
   nameAr          String?
   avatarUrl       String?
-  role            UserRole      @default(CUSTOMER)
+  role            UserRole       @default(CUSTOMER)
   organizationId  String?
-  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  isVerified      Boolean       @default(false)
-  isActive        Boolean       @default(true)
+  organization    Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  isVerified      Boolean        @default(false)
+  isActive        Boolean        @default(true)
   lastLoginAt     DateTime?
-  preferences     Json?         // User preferences
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  preferences     Json?          // User preferences
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   
   // Relations
   staffProfile    Staff?
@@ -108,8 +108,8 @@ model Session {
 // ============== CUSTOMERS ==============
 model Customer {
   id             String        @id @default(cuid())
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?       
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?       @unique
   user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   
@@ -407,8 +407,8 @@ view WeeklyRevenueView {
   weekStart      DateTime  @map("week_start")
   revenue        Float
   
+  @@unique([organizationId, weekStart])
   @@map("weekly_revenue_view")
-  @@ignore
 }
 
 view StaffPerformanceView {
@@ -420,8 +420,8 @@ view StaffPerformanceView {
   revenue          Float
   bookings          Int
   
+  @@unique([organizationId, staffId, periodStart])
   @@map("staff_performance_view")
-  @@ignore
 }
 
 view PopularServicesView {
@@ -429,20 +429,20 @@ view PopularServicesView {
   serviceId        String  @map("service_id")
   serviceName      String  @map("service_name")
   serviceNameAr    String? @map("service_name_ar")
-  bookingCount     Int     @map("booking_count")
+  bookingCount      Int     @map("booking_count")
   revenue          Float
   
+  @@unique([organizationId, serviceId])
   @@map("popular_services_view")
-  @@ignore
 }
 
 view PeakHoursView {
   organizationId   String  @map("organization_id")
-  hour               Int
-  bookings           Int
+  hour             Int
+  bookings         Int
   
+  @@unique([organizationId, hour])
   @@map("peak_hours_view")
-  @@ignore
 }
 
 // ============== INDUSTRY CONFIGURATION ==============
@@ -466,7 +466,7 @@ model Notification {
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   title          String
   titleAr        String?

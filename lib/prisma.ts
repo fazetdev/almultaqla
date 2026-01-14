@@ -1,25 +1,24 @@
-import { PrismaClient } from '../generated/prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL is missing');
-}
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+};
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const pool = connectionString ? new Pool({ connectionString }) : null;
+const adapter = pool ? new PrismaPg(pool) : null;
 
 export const prisma =
-  globalForPrisma.prisma ||
+  globalForPrisma.prisma ??
   new PrismaClient({
-    adapter, // Explicitly pass the driver adapter
-    log: ['query', 'error', 'warn'],
+    // In Prisma 7, you pass the adapter directly here
+    ...(adapter ? { adapter } : {}),
+    log: ["error", "warn"],
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-export default prisma;
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

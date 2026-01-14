@@ -1,118 +1,104 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+// app/api/auth/register/route.ts
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export const dynamic = 'force-dynamic'; // Ensures this route is only run at request time
-// POST /api/auth/register - Register new user
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { name, email, password, phone, organizationName, industry } = body;
 
-    // Validate required fields
+    // 1️⃣ Basic Validation
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: "Name, email, and password are required" },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    // 2️⃣ Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: "User with this email already exists" },
         { status: 409 }
       );
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    // Start transaction for user and optional organization creation
+    // 3️⃣ Transactional Creation (User + optional Organization + Customer)
     const result = await prisma.$transaction(async (tx) => {
-      let organizationId: string | undefined;
-      
-      // Create organization if provided
+      let createdOrgId: string | null = null;
+
+      // 3a️⃣ Create Organization if provided
       if (organizationName && industry) {
         const organization = await tx.organization.create({
           data: {
             name: organizationName,
-            industry: industry.toUpperCase(),
+            industry: industry.toUpperCase() as any, // Type-safe cast
             isActive: true,
           },
         });
-        organizationId = organization.id;
+        createdOrgId = organization.id;
       }
 
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          phone,
-          passwordHash,
-          role: organizationId ? 'ORGANIZATION_ADMIN' : 'CUSTOMER',
-          organizationId,
-          isVerified: false,
-          isActive: true,
-        },
-        include: {
-          organization: organizationId ? {
-            select: {
-              id: true,
-              name: true,
-              industry: true,
-            },
-          } : false,
-        },
-      });
+      // 3b️⃣ Create User
+      const userData: any = {
+        name,
+        email,
+        phone,
+        passwordHash,
+        role: createdOrgId ? "ORGANIZATION_ADMIN" : "CUSTOMER",
+        isVerified: false,
+        isActive: true,
+      };
+      if (createdOrgId) userData.organizationId = createdOrgId;
 
-      // If user is customer, create customer profile
-      if (!organizationId) {
+      const user = await tx.user.create({ data: userData });
+
+      // 3c️⃣ Create Customer Profile ONLY for standalone users
+      if (!createdOrgId) {
+        // Find default organization for unassigned customers
+        let defaultOrg = await tx.organization.findFirst({ where: { name: "Public" } });
+
+        // If default org doesn't exist, create it
+        if (!defaultOrg) {
+          defaultOrg = await tx.organization.create({
+            data: { name: "Public", industry: "RETAIL_STORE", isActive: true },
+          });
+        }
+
         await tx.customer.create({
           data: {
             name,
             email,
             phone,
-            organizationId: organizationId || '', // Will need organization context
             userId: user.id,
+            organizationId: defaultOrg.id, // ✅ Required field now satisfied
           },
         });
       }
 
       return {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          organization: user.organization,
-        },
-        organizationId,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: createdOrgId,
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Registration successful',
-      user: result.user,
-      organizationId: result.organizationId,
-    }, { status: 201 });
-  } catch (error) {
-    console.error('Registration error:', error);
+    // 4️⃣ Return success response
+    return NextResponse.json({ success: true, user: result }, { status: 201 });
+  } catch (err) {
+    console.error("REGISTER_ERROR:", err);
     return NextResponse.json(
-      { error: 'Registration failed' },
+      { error: "Registration failed. Please try again." },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
